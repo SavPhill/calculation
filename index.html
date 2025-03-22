@@ -11,7 +11,8 @@
     <div class="w-full max-w-7xl mx-auto bg-white p-8 shadow-lg rounded-lg">
         <h2 class="text-2xl font-bold mb-6 text-gray-700 text-center">Competitor Rate Calculation</h2>
         
-        <div class="overflow-x-auto">
+        <!-- Desktop Table View -->
+        <div class="hidden md:block overflow-x-auto">
             <table class="w-full border border-gray-300 text-center rounded-lg shadow-md">
                 <thead>
                     <tr class="bg-blue-500 text-white">
@@ -45,6 +46,25 @@
             </table>
         </div>
         
+        <!-- Mobile Accordion View -->
+        <div class="md:hidden">
+            <script>
+                for (let i = 1; i <= 6; i++) {
+                    document.write(`
+                        <div class="border rounded-lg mb-4 overflow-hidden shadow">
+                            <button class="w-full text-left p-3 bg-blue-500 text-white font-bold" onclick="toggleAccordion(${i})">Competitor ${i}</button>
+                            <div id="competitor-${i}" class="hidden bg-gray-50 p-4">
+                                ${Array.from({ length: 12 }, (_, j) => `
+                                    <label class="block mb-2 font-semibold">Month ${j + 1}</label>
+                                    <input type='number' class='w-full text-center border rounded-md p-2 focus:ring-2 focus:ring-blue-400 month-input' data-month='${j}'>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `);
+                }
+            </script>
+        </div>
+        
         <!-- Monthly Averages -->
         <div class="mt-6 p-6 bg-gray-50 rounded-lg shadow-inner text-gray-700">
             <h3 class="text-lg font-semibold mb-4">Monthly Averages</h3>
@@ -63,6 +83,11 @@
     </div>
 
     <script>
+        function toggleAccordion(id) {
+            let content = document.getElementById(`competitor-${id}`);
+            content.classList.toggle("hidden");
+        }
+        
         document.querySelectorAll('.month-input').forEach(input => {
             input.addEventListener('keyup', updateAverages);
         });
