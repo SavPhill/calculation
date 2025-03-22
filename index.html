@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Competitor Rate Calculation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="w-full max-w-7xl mx-auto bg-white p-8 shadow-lg rounded-lg">
+        <h2 class="text-2xl font-bold mb-6 text-gray-700 text-center">Competitor Rate Calculation</h2>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full border border-gray-300 text-center rounded-lg shadow-md">
+                <thead>
+                    <tr class="bg-blue-500 text-white">
+                        <th class="border p-3">Competitor</th>
+                        <th class="border p-3">Jan</th>
+                        <th class="border p-3">Feb</th>
+                        <th class="border p-3">Mar</th>
+                        <th class="border p-3">Apr</th>
+                        <th class="border p-3">May</th>
+                        <th class="border p-3">Jun</th>
+                        <th class="border p-3">Jul</th>
+                        <th class="border p-3">Aug</th>
+                        <th class="border p-3">Sep</th>
+                        <th class="border p-3">Oct</th>
+                        <th class="border p-3">Nov</th>
+                        <th class="border p-3">Dec</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white">
+                    <script>
+                        for (let i = 1; i <= 6; i++) {
+                            document.write(`<tr class='hover:bg-gray-100'>
+                                <td class='border p-3 font-semibold bg-gray-200'>Competitor ${i}</td>`);
+                            for (let j = 0; j < 12; j++) {
+                                document.write(`<td class='border p-2'><input type='number' class='w-full text-center border rounded-md p-2 focus:ring-2 focus:ring-blue-400 month-input' data-month='${j}'></td>`);
+                            }
+                            document.write(`</tr>`);
+                        }
+                    </script>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Monthly Averages -->
+        <div class="mt-6 p-6 bg-gray-50 rounded-lg shadow-inner text-gray-700">
+            <h3 class="text-lg font-semibold mb-4">Monthly Averages</h3>
+            <script>
+                let months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                months.forEach((month, index) => {
+                    document.write(`<p class='text-lg mb-1'>${month}: <span class='text-green-600 font-bold cursor-pointer hover:underline copy-value' id='avg-${index}' data-value='0'>0</span></p>`);
+                });
+            </script>
+        </div>
+        
+        <!-- Chart -->
+        <div class="mt-6">
+            <canvas id="rateChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        document.querySelectorAll('.month-input').forEach(input => {
+            input.addEventListener('keyup', updateAverages);
+        });
+
+        function updateAverages() {
+            let averages = [];
+            for (let month = 0; month < 12; month++) {
+                let sum = 0, count = 0;
+                document.querySelectorAll(`.month-input[data-month='${month}']`).forEach(input => {
+                    let val = parseInt(input.value) || 0;
+                    if (input.value !== "") count++;
+                    sum += val;
+                });
+                let avg = count > 0 ? (sum / count).toFixed(2) : 0;
+                let avgElement = document.getElementById(`avg-${month}`);
+                avgElement.innerText = avg;
+                avgElement.setAttribute('data-value', avg);
+                averages.push(parseFloat(avg));
+            }
+            updateChart(averages);
+        }
+
+        document.addEventListener('click', function(event) {
+            if (event.target.classList.contains('copy-value')) {
+                navigator.clipboard.writeText(event.target.getAttribute('data-value'));
+                event.target.classList.add('text-blue-500');
+                setTimeout(() => event.target.classList.remove('text-blue-500'), 1000);
+            }
+        });
+
+        const ctx = document.getElementById('rateChart').getContext('2d');
+        const rateChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: months,
+                datasets: [{
+                    label: 'Average Competitor Rate',
+                    data: Array(12).fill(0),
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderWidth: 2,
+                    fill: true,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        function updateChart(data) {
+            rateChart.data.datasets[0].data = data;
+            rateChart.update();
+        }
+    </script>
+</body>
+</html>
