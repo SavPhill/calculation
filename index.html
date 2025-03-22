@@ -10,7 +10,7 @@
     <div class="w-full max-w-7xl mx-auto bg-white p-8 shadow-lg rounded-lg">
         <h2 class="text-2xl font-bold mb-6 text-gray-700 text-center">Competitor Rate Calculation</h2>
         
-        <div class="overflow-x-auto">
+        <div class="hidden md:block overflow-x-auto">
             <table class="w-full border border-gray-300 text-center rounded-lg shadow-md">
                 <thead>
                     <tr class="bg-blue-500 text-white">
@@ -44,6 +44,33 @@
             </table>
         </div>
         
+        <!-- Accordion View for Mobile -->
+        <div class="md:hidden">
+            <script>
+                for (let i = 1; i <= 6; i++) {
+                    document.write(`
+                    <div class="mb-4 border rounded-lg overflow-hidden">
+                        <button class="w-full p-3 bg-blue-500 text-white text-left font-bold" onclick="toggleAccordion(${i})">
+                            Competitor ${i}
+                        </button>
+                        <div class="hidden p-4 bg-gray-50" id="competitor-${i}">
+                            <table class="w-full text-center border border-gray-300">
+                                <tbody>
+                                    ${[...Array(12)].map((_, j) => `
+                                    <tr>
+                                        <td class="border p-3 font-semibold">${new Date(0, j).toLocaleString('default', { month: 'long' })}</td>
+                                        <td class="border p-3">
+                                            <input type='number' class='w-full text-center border rounded-md p-2 focus:ring-2 focus:ring-blue-400 month-input' data-month='${j}' data-competitor='Competitor ${i}'>
+                                        </td>
+                                    </tr>`).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>`);
+                }
+            </script>
+        </div>
+        
         <!-- Monthly Averages & Competitor Gap Analysis -->
         <div class="mt-6 p-6 bg-gray-50 rounded-lg shadow-inner text-gray-700">
             <h3 class="text-lg font-semibold mb-4">Monthly Averages</h3>
@@ -58,6 +85,11 @@
     </div>
 
     <script>
+        function toggleAccordion(id) {
+            let content = document.getElementById(`competitor-${id}`);
+            content.classList.toggle('hidden');
+        }
+
         document.querySelectorAll('.month-input').forEach(input => {
             input.addEventListener('keyup', updateAverages);
         });
@@ -81,7 +113,6 @@
                 avgElement.setAttribute('data-value', avg);
                 averages.push(parseFloat(avg));
                 
-                // Determine Cheapest & Most Expensive
                 let filteredValues = competitors.filter(v => v.value > 0);
                 let minValue = filteredValues.length > 0 ? Math.min(...filteredValues.map(v => v.value)) : '-';
                 let maxValue = filteredValues.length > 0 ? Math.max(...filteredValues.map(v => v.value)) : '-';
@@ -93,14 +124,6 @@
                 document.getElementById(`max-name-${month}`).innerText = maxNames || '-';
             }
         }
-
-        document.addEventListener('click', function(event) {
-            if (event.target.classList.contains('copy-value')) {
-                navigator.clipboard.writeText(event.target.getAttribute('data-value'));
-                event.target.classList.add('text-blue-500');
-                setTimeout(() => event.target.classList.remove('text-blue-500'), 1000);
-            }
-        });
     </script>
 </body>
 </html>
