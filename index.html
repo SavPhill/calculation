@@ -5,14 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Competitor Rate Calculation</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
     <div class="w-full max-w-7xl mx-auto bg-white p-8 shadow-lg rounded-lg">
         <h2 class="text-2xl font-bold mb-6 text-gray-700 text-center">Competitor Rate Calculation</h2>
         
-        <!-- Desktop Table View -->
-        <div class="hidden md:block overflow-x-auto">
+        <div class="overflow-x-auto">
             <table class="w-full border border-gray-300 text-center rounded-lg shadow-md">
                 <thead>
                     <tr class="bg-blue-500 text-white">
@@ -37,7 +35,7 @@
                             document.write(`<tr class='hover:bg-gray-100'>
                                 <td class='border p-3 font-semibold bg-gray-200'>Competitor ${i}</td>`);
                             for (let j = 0; j < 12; j++) {
-                                document.write(`<td class='border p-2'><input type='number' class='w-full text-center border rounded-md p-2 focus:ring-2 focus:ring-blue-400 month-input' data-month='${j}'></td>`);
+                                document.write(`<td class='border p-2'><input type='number' class='w-full text-center border rounded-md p-2 focus:ring-2 focus:ring-blue-400 month-input' data-month='${j}' data-competitor='Competitor ${i}'></td>`);
                             }
                             document.write(`</tr>`);
                         }
@@ -46,48 +44,20 @@
             </table>
         </div>
         
-        <!-- Mobile Accordion View -->
-        <div class="md:hidden">
-            <script>
-                for (let i = 1; i <= 6; i++) {
-                    document.write(`
-                        <div class="border rounded-lg mb-4 overflow-hidden shadow">
-                            <button class="w-full text-left p-3 bg-blue-500 text-white font-bold" onclick="toggleAccordion(${i})">Competitor ${i}</button>
-                            <div id="competitor-${i}" class="hidden bg-gray-50 p-4">
-                                ${Array.from({ length: 12 }, (_, j) => `
-                                    <label class="block mb-2 font-semibold">Month ${j + 1}</label>
-                                    <input type='number' class='w-full text-center border rounded-md p-2 focus:ring-2 focus:ring-blue-400 month-input' data-month='${j}'>
-                                `).join('')}
-                            </div>
-                        </div>
-                    `);
-                }
-            </script>
-        </div>
-        
-        <!-- Monthly Averages -->
+        <!-- Monthly Averages & Competitor Gap Analysis -->
         <div class="mt-6 p-6 bg-gray-50 rounded-lg shadow-inner text-gray-700">
             <h3 class="text-lg font-semibold mb-4">Monthly Averages</h3>
             <script>
                 let months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
                 months.forEach((month, index) => {
-                    document.write(`<p class='text-lg mb-1'>${month}: <span class='text-green-600 font-bold cursor-pointer hover:underline copy-value' id='avg-${index}' data-value='0'>0</span></p>`);
+                    document.write(`<p class='text-lg mb-1'>${month}: <span class='text-green-600 font-bold cursor-pointer hover:underline copy-value' id='avg-${index}' data-value='0'>0</span> ฿</p>`);
+                    document.write(`<p class='text-sm mt-1'>Cheapest: <span class='text-green-600 font-bold' id='min-${index}'>-</span> (<span id='min-name-${index}'>-</span>) | Most Expensive: <span class='text-red-600 font-bold' id='max-${index}'>-</span> (<span id='max-name-${index}'>-</span>)</p>`);
                 });
             </script>
-        </div>
-        
-        <!-- Chart -->
-        <div class="mt-6">
-            <canvas id="rateChart"></canvas>
         </div>
     </div>
 
     <script>
-        function toggleAccordion(id) {
-            let content = document.getElementById(`competitor-${id}`);
-            content.classList.toggle("hidden");
-        }
-        
         document.querySelectorAll('.month-input').forEach(input => {
             input.addEventListener('keyup', updateAverages);
         });
@@ -96,18 +66,32 @@
             let averages = [];
             for (let month = 0; month < 12; month++) {
                 let sum = 0, count = 0;
+                let values = [];
+                let competitors = [];
                 document.querySelectorAll(`.month-input[data-month='${month}']`).forEach(input => {
                     let val = parseInt(input.value) || 0;
                     if (input.value !== "") count++;
                     sum += val;
+                    values.push(val);
+                    competitors.push({ name: input.getAttribute('data-competitor'), value: val });
                 });
-                let avg = count > 0 ? (sum / count).toFixed(2) : 0;
+                let avg = count > 0 ? (sum / count).toFixed(2) : "0";
                 let avgElement = document.getElementById(`avg-${month}`);
                 avgElement.innerText = avg;
                 avgElement.setAttribute('data-value', avg);
                 averages.push(parseFloat(avg));
+                
+                // Determine Cheapest & Most Expensive
+                let filteredValues = competitors.filter(v => v.value > 0);
+                let minValue = filteredValues.length > 0 ? Math.min(...filteredValues.map(v => v.value)) : '-';
+                let maxValue = filteredValues.length > 0 ? Math.max(...filteredValues.map(v => v.value)) : '-';
+                let minNames = filteredValues.filter(v => v.value === minValue).map(v => v.name).join(', ');
+                let maxNames = filteredValues.filter(v => v.value === maxValue).map(v => v.name).join(', ');
+                document.getElementById(`min-${month}`).innerText = minValue;
+                document.getElementById(`max-${month}`).innerText = maxValue;
+                document.getElementById(`min-name-${month}`).innerText = minNames || '-';
+                document.getElementById(`max-name-${month}`).innerText = maxNames || '-';
             }
-            updateChart(averages);
         }
 
         document.addEventListener('click', function(event) {
@@ -117,36 +101,6 @@
                 setTimeout(() => event.target.classList.remove('text-blue-500'), 1000);
             }
         });
-
-        const ctx = document.getElementById('rateChart').getContext('2d');
-        const rateChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: months,
-                datasets: [{
-                    label: 'Average Competitor Rate',
-                    data: Array(12).fill(0),
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    borderWidth: 2,
-                    fill: true,
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-
-        function updateChart(data) {
-            rateChart.data.datasets[0].data = data;
-            rateChart.update();
-        }
     </script>
 </body>
 </html>
